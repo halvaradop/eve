@@ -12,6 +12,7 @@ import type { LocalTrace, LocalTraceSpan } from "#tracing/local-trace-reader.js"
 import { compareLocalTraceSpans, isAgentTurnSpan } from "#tracing/local-trace-reader.js";
 import { agentTurnIdentity } from "#tracing/agent-span-contract.js";
 import { localTraceSpanCostUsd } from "#tracing/local-trace-summary.js";
+import { traceStringAttribute } from "#tracing/local-trace-operations.js";
 
 import { formatCompactTokenCount } from "../stream-format.js";
 import type { Theme } from "../theme.js";
@@ -114,9 +115,9 @@ export function buildConversationItems(trace: LocalTrace): ConversationItem[] {
     if (isModelSpan(span)) {
       const text = stringAttribute(span, "ai.response.text");
       const reasoning = stringAttribute(span, "ai.response.reasoning");
-      const hasUsage =
-        numberAttribute(span, "agent.usage.input_tokens") !== undefined ||
-        numberAttribute(span, "agent.usage.output_tokens") !== undefined;
+      const inputTokens = numberAttribute(span, "gen_ai.usage.input_tokens");
+      const outputTokens = numberAttribute(span, "gen_ai.usage.output_tokens");
+      const hasUsage = inputTokens !== undefined || outputTokens !== undefined;
       const hasToolCalls = span.attributes["ai.response.tool_calls"] !== undefined;
       const isEmpty =
         (text === undefined || text.trim().length === 0) &&
@@ -131,9 +132,9 @@ export function buildConversationItems(trace: LocalTrace): ConversationItem[] {
           costUsd: stepCostUsd(span, byId),
           durationMs: spanDurationMs(span),
           error: span.statusCode === 2,
-          inputTokens: numberAttribute(span, "agent.usage.input_tokens"),
+          inputTokens,
           model: stringAttribute(span, "gen_ai.request.model"),
-          outputTokens: numberAttribute(span, "agent.usage.output_tokens"),
+          outputTokens,
           reasoning,
           span,
           subagent,
@@ -253,7 +254,7 @@ function turnSubagent(
   const name = stringAttribute(parent, "agent.action.name");
   return {
     name: name === undefined ? undefined : stripTerminalControls(name),
-    parentCallId: stringAttribute(parent, "agent.action.call_id"),
+    parentCallId: traceStringAttribute(parent, "gen_ai.tool.call.id"),
     parentTurnId,
   };
 }
