@@ -54,7 +54,7 @@ export type InternalAgentModelDefinition = {
  * A concrete model handle: an AI Gateway model id string or an AI SDK
  * `LanguageModel` instance.
  */
-export type PublicAgentStaticModelDefinition = string | LanguageModel;
+export type PublicAgentStaticModelDefinition = LanguageModel;
 
 /** Context passed to dynamic model event handlers; the shared dynamic resolver context. */
 export type AgentModelResolveContext = DynamicResolveContext;

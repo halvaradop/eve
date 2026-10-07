@@ -24,14 +24,25 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const REPO_ROOT = resolve(new URL("..", import.meta.url).pathname);
+const REPO_ROOT = resolve(fileURLToPath(new URL("..", import.meta.url)));
 
 // Exit code `oxfmt` uses when no passed path matches a supported parser.
 const OXFMT_NO_TARGETS_EXIT = 2;
 
+function resolveCommand(cmd) {
+  if (process.platform === "win32" && cmd === "pnpm") {
+    const pnpmExe = resolve(process.env.APPDATA ?? "", "npm/node_modules/pnpm/pnpm.exe");
+    if (existsSync(pnpmExe)) {
+      return pnpmExe;
+    }
+  }
+  return cmd;
+}
+
 function run(cmd, args, opts = {}) {
-  const result = spawnSync(cmd, args, {
+  const result = spawnSync(resolveCommand(cmd), args, {
     cwd: REPO_ROOT,
     encoding: "utf8",
     ...opts,
